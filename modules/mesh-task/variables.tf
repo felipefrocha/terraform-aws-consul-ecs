@@ -107,3 +107,5 @@ variable "gossip_key_secret_arn" {
   type        = string
   default     = ""
 }
+
+variable "datadog_api_key" {}

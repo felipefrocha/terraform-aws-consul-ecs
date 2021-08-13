@@ -11,6 +11,7 @@ exec consul agent \
   -advertise "$ECS_IPV4" \
   -data-dir /consul/data \
   -client 0.0.0.0 \
+  -hcl 'telemetry { dogstatsd_addr = "127.0.0.1:8125" }' \
 %{ if gossip_encryption_enabled ~}
   -encrypt "$CONSUL_GOSSIP_ENCRYPTION_KEY" \
 %{ endif ~}
@@ -32,4 +33,5 @@ exec consul agent \
   -hcl 'auto_encrypt = {tls = true}' \
   -hcl "auto_encrypt = {ip_san = [\"$ECS_IPV4\"]}" \
   -hcl 'verify_outgoing = true' \
+  -hcl 'verify_incoming = false' \
 %{ endif ~}
