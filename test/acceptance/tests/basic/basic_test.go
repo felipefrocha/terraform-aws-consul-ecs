@@ -60,8 +60,7 @@ func TestValidation_ACLSecretNamePrefixIsRequiredIfACLsIsEnabled(t *testing.T) {
 }
 
 func TestBasic(t *testing.T) {
-	// cases := []bool{false, true}
-	cases := []bool{true}
+	cases := []bool{false, true}
 
 	for _, secure := range cases {
 		t.Run(fmt.Sprintf("secure: %t", secure), func(t *testing.T) {
