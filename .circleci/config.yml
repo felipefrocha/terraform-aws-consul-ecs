@@ -121,14 +121,6 @@ jobs:
 workflows:
   version: 2
   test-and-build:
-    triggers:
-      - schedule:
-          # Run once an hour on Friday, Saturday, Sunday, and Monday
-          cron: "0 * * * 5,6,0,1"
-          filters:
-            branches:
-              only:
-                - pglass/why-test-is-flaky
     jobs:
       - go-fmt-and-lint-acceptance
       - terraform-fmt
