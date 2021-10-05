@@ -39,6 +39,12 @@ variable "port" {
   default     = 0
 }
 
+variable "consul_agent_options" {
+  description = "Map of CLI options for the 'consul agent' command. The option '-client 0.0.0.0' would be {\"client\": \"0.0.0.0\"}"
+  type        = map(any)
+  default     = {}
+}
+
 variable "outbound_only" {
   description = "Whether the application only makes outward requests and does not receive any requests. Must be set to true if port is 0."
   type        = bool

@@ -34,6 +34,61 @@ locals {
     )
   ]
   upstreams_flag = join(",", [for upstream in var.upstreams : "${upstream["destination_name"]}:${upstream["local_bind_port"]}"])
+
+  internal_consul_agent_options = {
+    advertise  = "$ECS_IPV4"
+    client     = "0.0.0.0"
+    data-dir   = "/consul/data"
+    encrypt    = local.gossip_encryption_enabled ? "$CONSUL_GOSSIP_ENCRYPTION_KEY" : null
+    retry-join = var.retry_join
+    // Maybe we can have this be plain HCL, rather than a string?
+    hcl = trimspace(<<EOF
+addresses {
+  dns = "127.0.0.1"
+  grpc = "127.0.0.1"
+  http = "127.0.0.1"
+}
+telemetry { disable_compat_1.9 = true }
+leave_on_terminate = true
+ports { grpc = 8502 }
+advertise_reconnect_timeout = "15m"
+enable_central_service_config = true
+
+%{if var.tls~}
+ca_file = "/tmp/consul-ca-cert.pem"
+auto_encrypt {
+  tls = true
+  ip_san = ["$ECS_IPV4"]
+}
+verify_outgoing = true
+%{endif~}
+
+%{if var.acls~}
+acl {
+  enabled = true
+  default_policy = "deny"
+  down_policy = "async-cache"
+  tokens {
+    agent = "$AGENT_TOKEN"
+  }
+}
+%{endif~}
+EOF
+    )
+  }
+
+  merged_consul_agent_options = merge(
+    local.internal_consul_agent_options,
+    var.consul_agent_options,
+    // We handle hcl a bit separately. We pass two hcl options `-hcl <internal-hcl> -hcl <user-hcl>`
+    // so that the user-provided hcl is merged by Consul in the way we want (Concatenating the two HCL
+    // fragments into one string has problems, since HCL docs effectively represent a map)
+    {
+      hcl = local.internal_consul_agent_options["hcl"],
+    }
+  )
+
+
 }
 
 resource "aws_iam_role" "task" {
@@ -248,10 +303,9 @@ resource "aws_ecs_task_definition" "this" {
               templatefile(
                 "${path.module}/templates/consul_client_command.tpl",
                 {
-                  gossip_encryption_enabled = local.gossip_encryption_enabled
-                  retry_join                = var.retry_join
-                  tls                       = var.tls
-                  acls                      = var.acls
+                  consul_agent_options = local.merged_consul_agent_options
+                  user_hcl             = contains(keys(var.consul_agent_options), "hcl") ? var.consul_agent_options["hcl"] : ""
+                  tls                  = var.tls
                 }
               ), "\r", "")
             ]
