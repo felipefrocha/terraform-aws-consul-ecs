@@ -5,6 +5,7 @@ type TestConfig struct {
 	NoCleanupOnFailure bool
 	ECSClusterARN      string `json:"ecs_cluster_arn"`
 	LaunchType         string `json:"launch_type"`
+	ConsulImage        string `json:"consul_image"`
 	Subnets            interface{}
 	Suffix             string
 	Region             string
